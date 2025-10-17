@@ -1,0 +1,124 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-2">My Profile</h1>
+  <p class="text-gray-600 mb-6">Manage your personal information and achievements</p>
+
+  <!-- ===== Top Section ===== -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- ✅ Personal Info Card -->
+    <div class="bg-white p-6 rounded-2xl shadow col-span-2">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold">Personal Information</h2>
+        <button id="editBtn" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Edit Profile</button>
+      </div>
+
+      <form id="profileForm" method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="text-sm text-gray-700">Full Name</span>
+            <input type="text" name="full_name" value="{{ member.user.get_full_name }}" class="mt-1 block w-full px-3 py-2 border rounded" readonly />
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-gray-700">Email Address</span>
+            <input type="email" name="email" value="{{ member.user.email }}" class="mt-1 block w-full px-3 py-2 border rounded" readonly />
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-gray-700">Student ID</span>
+            <input type="text" name="student_id" value="{{ member.student_id }}" class="mt-1 block w-full px-3 py-2 border rounded" readonly />
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-gray-700">Course</span>
+            <input type="text" name="course" value="{{ member.course }}" class="mt-1 block w-full px-3 py-2 border rounded" readonly />
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-gray-700">Year of Study</span>
+            <input type="text" name="year" value="{{ member.year }}" class="mt-1 block w-full px-3 py-2 border rounded" readonly />
+          </label>
+        </div>
+
+        <!-- Save/Cancel Actions -->
+        <div id="editActions" class="hidden mt-4 flex gap-2">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Changes</button>
+          <a href="{% url 'accounts:profile_update' %}" class="px-4 py-2 bg-gray-200 rounded-lg">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+    <!-- ✅ Profile Summary Card -->
+    <div class="bg-white p-6 rounded-2xl shadow flex flex-col items-center text-center">
+      <div class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center mb-3">
+        <svg class="w-10 h-10 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 10a4 4 0 100-8 4 4 0 000 8zM2 18a8 8 0 1116 0H2z" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-semibold">{{ member.user.get_full_name }}</h3>
+      <p class="text-gray-500">{{ member.student_id }}</p>
+
+        {% if user.is_superuser %}
+          <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600 border border-blue-200">
+            superadmin
+          </span>
+        {% elif user.member.role == "Admin" %}
+          <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-600 border border-green-200">
+            admin
+          </span>
+        {% else %}
+          <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+            member
+          </span>
+        {% endif %}
+      <p class="mt-2">Status: <span class="px-2 py-1 bg-green-100 text-green-600 text-xs rounded">active</span></p>
+      <p class="mt-2 text-sm text-gray-500">Member Since: {{ user.date_joined|date:"d/m/Y" }}</p>
+      <p class="text-sm text-gray-500">Achievements: {{ achievements.count }}</p>
+    </div>
+  </div>
+
+  <!-- ===== Bottom Section ===== -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+    <!-- Achievements -->
+    <div class="bg-white p-6 rounded-2xl shadow col-span-2">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold">Achievements & Certifications</h2>
+        <button data-modal-target="addAchievementModal" data-modal-toggle="addAchievementModal"
+          class="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">+ Add Achievement</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for achievement in achievements %}
+        <div class="p-4 border rounded-lg shadow-sm">
+          <h3 class="font-semibold">{{ achievement.title }}</h3>
+          <p class="text-gray-600 text-sm">{{ achievement.description }}</p>
+          <p class="text-xs text-gray-400 mt-1">Earned: {{ achievement.date_earned|date:"d/m/Y" }}</p>
+        </div>
+        {% empty %}
+        <p class="text-gray-500">No achievements yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="bg-white p-6 rounded-2xl shadow">
+      <h2 class="text-lg font-semibold mb-4">Quick Stats</h2>
+      <ul class="space-y-2 text-sm">
+        <li class="flex justify-between"><span>Events Registered</span><span class="font-medium"> {{ stats.events }}</span></li>
+        <li class="flex justify-between"><span>Announcements Read</span><span class="font-medium"> {{ stats.announcements }}</span></li>
+        <li class="flex justify-between"><span>Achievements</span><span class="font-medium"> {{ achievements.count }}</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% block scripts %}
+<script src="{% static 'accounts/js/profile.js' %}"></script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}Audit Logs{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+  
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow p-5 border border-gray-100">
+      <h3 class="text-sm font-medium text-gray-500">Logins</h3>
+      <p class="text-2xl font-bold text-blue-600 mt-2">{{ logins_count }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-5 border border-gray-100">
+      <h3 class="text-sm font-medium text-gray-500">Event Actions</h3>
+      <p class="text-2xl font-bold text-purple-600 mt-2">{{ event_actions_count }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-5 border border-gray-100">
+      <h3 class="text-sm font-medium text-gray-500">Profile Updates</h3>
+      <p class="text-2xl font-bold text-green-600 mt-2">{{ profile_updates_count }}</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="bg-white rounded-xl shadow p-4 border border-gray-100 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <input type="text" name="action" placeholder="Filter by action"
+             value="{{ selected_action }}"
+             class="px-3 py-2 border rounded w-full focus:ring focus:ring-blue-200">
+      <input type="text" name="user" placeholder="Filter by user"
+             value="{{ selected_user }}"
+             class="px-3 py-2 border rounded w-full focus:ring focus:ring-blue-200">
+      <input type="date" name="start_date"
+             value="{{ selected_start_date }}"
+             class="px-3 py-2 border rounded w-full focus:ring focus:ring-blue-200">
+      <input type="date" name="end_date"
+             value="{{ selected_end_date }}"
+             class="px-3 py-2 border rounded w-full focus:ring focus:ring-blue-200">
+    </div>
+    <div class="flex justify-end mt-4">
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        Apply Filters
+      </button>
+    </div>
+  </form>
+
+  <!-- Logs Table -->
+  <div class="bg-white rounded-xl shadow border border-gray-100 overflow-hidden">
+    <table class="w-full text-left">
+      <thead class="bg-gray-50 border-b">
+        <tr>
+          <th class="px-4 py-3 text-sm font-semibold text-gray-600">User</th>
+          <th class="px-4 py-3 text-sm font-semibold text-gray-600">Action</th>
+          <th class="px-4 py-3 text-sm font-semibold text-gray-600">Timestamp</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for log in logs %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-sm text-gray-800">{{ log.user.username }}</td>
+          <td class="px-4 py-3 text-sm text-gray-700">{{ log.action }}</td>
+          <td class="px-4 py-3 text-sm text-gray-500">{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="px-4 py-6 text-center text-gray-500">No logs found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if logs.has_other_pages %}
+  <div class="flex justify-center items-center space-x-2 mt-6">
+    {% if logs.has_previous %}
+      <a href="?page={{ logs.previous_page_number }}&action={{ selected_action }}&user={{ selected_user }}&start_date={{ selected_start_date }}&end_date={{ selected_end_date }}"
+         class="px-3 py-1 border rounded hover:bg-gray-100">Prev</a>
+    {% endif %}
+
+    {% for num in logs.paginator.page_range %}
+      {% if logs.number == num %}
+        <span class="px-3 py-1 bg-blue-600 text-white rounded">{{ num }}</span>
+      {% elif num > logs.number|add:-3 and num < logs.number|add:3 %}
+        <a href="?page={{ num }}&action={{ selected_action }}&user={{ selected_user }}&start_date={{ selected_start_date }}&end_date={{ selected_end_date }}"
+           class="px-3 py-1 border rounded hover:bg-gray-100">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if logs.has_next %}
+      <a href="?page={{ logs.next_page_number }}&action={{ selected_action }}&user={{ selected_user }}&start_date={{ selected_start_date }}&end_date={{ selected_end_date }}"
+         class="px-3 py-1 border rounded hover:bg-gray-100">Next</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

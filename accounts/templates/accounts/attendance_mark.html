@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance Status</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+  <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+    {% if status == "ok" %}
+      <div class="text-green-500 text-5xl mb-3">✅</div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Attendance Recorded</h2>
+      <p class="text-gray-600">{{ message }}</p>
+
+    {% elif status == "already" %}
+      <div class="text-blue-500 text-5xl mb-3">ℹ️</div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Already Recorded</h2>
+      <p class="text-gray-600">{{ message }}</p>
+
+    {% elif status == "not_registered" %}
+      <div class="text-yellow-500 text-5xl mb-3">⚠️</div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Not Registered</h2>
+      <p class="text-gray-600">{{ message }}</p>
+      <a href="{% url 'accounts:register' %}" class="inline-block mt-4 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">
+        Register Now
+      </a>
+
+    {% elif status == "not_logged_in" %}
+      <div class="text-blue-500 text-5xl mb-3">🔒</div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Login Required</h2>
+      <p class="text-gray-600">{{ message }}</p>
+      <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="inline-block mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+        Login
+      </a>
+
+    {% elif status == "invalid" %}
+      <div class="text-red-500 text-5xl mb-3">❌</div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Invalid QR Code</h2>
+      <p class="text-gray-600">{{ message }}</p>
+
+    {% elif status == "expired" %}
+      <div class="text-red-500 text-5xl mb-3">⏰</div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Expired QR Code</h2>
+      <p class="text-gray-600">{{ message }}</p>
+
+    {% else %}
+      <div class="text-gray-500 text-5xl mb-3">ℹ️</div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Attendance Info</h2>
+      <p class="text-gray-600">No status provided.</p>
+    {% endif %}
+
+    {% if event %}
+      <p class="mt-6 text-sm text-gray-500">Event: <strong>{{ event.title }}</strong></p>
+    {% endif %}
+
+    <!-- ✅ Back to Events Button -->
+    <a href="{% url 'accounts:event_list' %}" class="inline-block mt-6 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800">
+      Back to Events
+    </a>
+  </div>
+
+</body>
+</html>

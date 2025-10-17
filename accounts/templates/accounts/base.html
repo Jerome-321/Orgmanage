@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}StudentOrg{% endblock %}</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'accounts/css/style.css' %}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body
+  class="{% if request.resolver_match.url_name in 'login register' %}
+         min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-800
+         {% else %}
+         bg-gray-50 text-gray-800
+         {% endif %}">
+
+  {% if request.resolver_match.url_name not in 'login register' %}
+  <nav class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+
+        <div class="flex items-center space-x-4">
+          <span class="text-xl font-bold text-blue-600 flex items-center">
+            👥 StudentOrg
+          </span>
+
+          {% if user.is_superuser %}
+            <a href="{% url 'accounts:superadmin_dashboard' %}"
+               class="px-3 py-2 rounded-md text-sm font-medium
+               {% if request.resolver_match.url_name == 'superadmin_dashboard' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+              Dashboard
+            </a>
+          {% elif user.member.role == "admin" %}
+            <a href="{% url 'accounts:admin_dashboard' %}"
+               class="px-3 py-2 rounded-md text-sm font-medium
+               {% if request.resolver_match.url_name == 'admin_dashboard' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+              Dashboard
+            </a>
+          {% else %}
+            <a href="{% url 'accounts:member_dashboard' %}"
+               class="px-3 py-2 rounded-md text-sm font-medium
+               {% if request.resolver_match.url_name == 'member_dashboard' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+              Dashboard
+            </a>
+          {% endif %}
+        </div>
+
+        
+        {% if user.member.role == "admin" or user.member.role == "superadmin" %}
+        <div class="flex space-x-6">
+          <a href="{% url 'accounts:membership_list' %}"
+             class="px-3 py-2 rounded-md text-sm font-medium
+             {% if request.resolver_match.url_name == 'membership_list' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+            Members
+          </a>
+
+          <a href="{% url 'accounts:event_list' %}"
+             class="px-3 py-2 rounded-md text-sm font-medium
+             {% if request.resolver_match.url_name == 'event_list' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+            Events
+          </a>
+
+          <a href="{% url 'accounts:announcement_list' %}"
+             class="px-3 py-2 rounded-md text-sm font-medium
+             {% if request.resolver_match.url_name == 'announcement_list' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+            Announcements
+          </a>
+
+          <a href="{% url 'accounts:audit_log_list' %}"
+             class="px-3 py-2 rounded-md text-sm font-medium
+             {% if request.resolver_match.url_name == 'audit_log_list' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+            Activity Logs
+          </a>
+
+          <a href="{% url 'accounts:profile_update' %}"
+             class="px-3 py-2 rounded-md text-sm font-medium
+             {% if request.resolver_match.url_name == 'profile_update' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+            Profile
+          </a>
+        </div>
+        {% else %}
+        <div class="flex space-x-6">
+
+          <a href="{% url 'accounts:event_list' %}"
+             class="px-3 py-2 rounded-md text-sm font-medium
+             {% if request.resolver_match.url_name == 'event_list' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+            Events
+          </a>
+
+          <a href="{% url 'accounts:announcement_list' %}"
+             class="px-3 py-2 rounded-md text-sm font-medium
+             {% if request.resolver_match.url_name == 'announcement_list' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+            Announcements
+          </a>
+
+          <a href="{% url 'accounts:audit_log_list' %}"
+             class="px-3 py-2 rounded-md text-sm font-medium
+             {% if request.resolver_match.url_name == 'audit_log_list' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+            Activity Logs
+          </a>
+
+          <a href="{% url 'accounts:profile_update' %}"
+             class="px-3 py-2 rounded-md text-sm font-medium
+             {% if request.resolver_match.url_name == 'profile_update' %} bg-blue-100 text-blue-700 {% else %} hover:bg-gray-100 {% endif %}">
+            Profile
+          </a>
+        </div>
+        {% endif %}
+
+        <div class="flex items-center space-x-4">
+          <span class="text-sm">
+            Welcome, <strong>{{ user.get_full_name|default:user.username }}</strong>
+          </span>
+
+          {% if user.is_superuser %}
+            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-600 border border-blue-200">
+              Superadmin
+            </span>
+          {% elif user.member.role == "admin" %}
+            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-600 border border-green-200">
+              Admin
+            </span>
+          {% else %}
+            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+              Member
+            </span>
+          {% endif %}
+
+          <a href="{% url 'accounts:logout' %}"
+             class="px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-sm font-medium">
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+
+  {% block content %}{% endblock %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

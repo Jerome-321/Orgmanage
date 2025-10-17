@@ -1,0 +1,255 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block title %}Member Management{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <h1 class="text-2xl font-bold text-gray-800 mb-2">Member Management</h1>
+  <p class="text-gray-500 mb-6">Manage student profiles and memberships</p>
+
+  <!-- Search & Filters -->
+  <div class="bg-white shadow rounded-lg p-4 mb-6 flex flex-col md:flex-row items-start md:items-center md:space-x-4">
+    <form method="get" action="{% url 'accounts:membership_list' %}" class="flex-1">
+      <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by name, email, student ID, or course..."
+        class="w-full px-4 py-2 border rounded-lg focus:ring focus:ring-blue-200 focus:outline-none">
+    </form>
+    <div class="mt-3 md:mt-0 flex space-x-2">
+      <a href="?status=all" class="px-4 py-2 rounded-lg {% if request.GET.status == 'all' or not request.GET.status %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">All Members</a>
+      <a href="?status=active" class="px-4 py-2 rounded-lg {% if request.GET.status == 'active' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">Active</a>
+      <a href="?status=inactive" class="px-4 py-2 rounded-lg {% if request.GET.status == 'inactive' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">Inactive</a>
+    </div>
+  </div>
+
+  <!-- Members Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for member in members %}
+      <div class="bg-white shadow rounded-lg p-6 relative">
+        <!-- status badge -->
+        <span class="absolute top-3 right-3 text-xs px-2 py-1 rounded-full {% if member.membership_status == 'active' %}bg-green-100 text-green-600{% else %}bg-red-100 text-red-600{% endif %}">
+          {{ member.membership_status }}
+        </span>
+
+        <div class="flex items-center mb-4">
+          <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="font-semibold text-gray-800">{{ member.user.get_full_name|default:member.user.username }}</p>
+            <p class="text-sm text-gray-500">{{ member.student_id }}</p>
+          </div>
+        </div>
+
+        <p><strong>Email:</strong> {{ member.user.email }}</p>
+        <p><strong>Course:</strong> {{ member.course }}</p>
+        <p><strong>Year:</strong> {{ member.year }}</p>
+        <p>
+          <strong>Role:</strong>
+          <span class="px-2 py-0.5 rounded text-xs font-medium
+            {% if member.role == 'superadmin' %} bg-purple-100 text-purple-700
+            {% elif member.role == 'admin' %} bg-blue-100 text-blue-700
+            {% else %} bg-gray-100 text-gray-700 {% endif %}">
+            {{ member.role }}
+          </span>
+        </p>
+        <p><strong>Joined:</strong> {{ member.date_joined|date:"d/m/Y" }}</p>
+        <p><strong>Achievements:</strong> {{ member.achievements.count }}</p>
+
+        <!-- Actions -->
+        <div class="mt-4 flex flex-wrap gap-2">
+          {% if user.member.role in "Admin superadmin" %}
+          <button type="button" data-modal-target="edit-modal-{{ member.id }}" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 modal-open">
+            Edit
+          </button>
+          {% endif %}
+          <!-- Promote / Demote (only shown to superadmin) -->
+          {% if request.user.is_superuser %}
+            {% if member.role == 'member' %}
+              <button type="button" data-modal-target="promote-modal-{{ member.id }}" class="px-3 py-1 bg-blue-100 text-blue-700 rounded modal-open">
+                Promote
+              </button>
+            {% elif member.role == 'admin' %}
+              <button type="button" data-modal-target="promote-modal-{{ member.id }}" class="px-3 py-1 bg-blue-100 text-blue-700 rounded modal-open">
+                Promote
+              </button>
+              <button type="button" data-modal-target="demote-modal-{{ member.id }}" class="px-3 py-1 bg-purple-100 text-purple-700 rounded modal-open">
+                Demote
+              </button>
+            {% elif member.role == 'superadmin' %}
+              <button type="button" class="px-3 py-1 bg-gray-100 text-gray-700 rounded cursor-not-allowed" disabled>Superadmin</button>
+            {% endif %}
+          {% endif %}
+
+          <!-- Activate / Deactivate -->
+          {% if member.membership_status == 'active' %}
+            <button type="button" data-modal-target="deactivate-modal-{{ member.id }}" class="px-3 py-1 bg-red-100 text-red-700 rounded modal-open">
+              Deactivate
+            </button>
+          {% else %}
+            <button type="button" data-modal-target="activate-modal-{{ member.id }}" class="px-3 py-1 bg-green-100 text-green-700 rounded modal-open">
+              Activate
+            </button>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ---------- EDIT MODAL (per-member) ---------- -->
+      <div id="edit-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black opacity-40"></div>
+        <div class="bg-white rounded-lg shadow-lg max-w-xl w-full z-10 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Edit Member</h3>
+            <button type="button" class="text-gray-500 modal-close" data-modal-close="edit-modal-{{ member.id }}">✕</button>
+          </div>
+
+          <form method="post" action="{% url 'accounts:update_member' member.id %}">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label class="block">
+                <span class="text-sm text-gray-700">First name</span>
+                <input type="text" name="first_name" value="{{ member.user.first_name }}" class="mt-1 block w-full px-3 py-2 border rounded" />
+              </label>
+              <label class="block">
+                <span class="text-sm text-gray-700">Last name</span>
+                <input type="text" name="last_name" value="{{ member.user.last_name }}" class="mt-1 block w-full px-3 py-2 border rounded" />
+              </label>
+              <label class="block">
+                <span class="text-sm text-gray-700">Email</span>
+                <input type="email" name="email" value="{{ member.user.email }}" class="mt-1 block w-full px-3 py-2 border rounded" />
+              </label>
+              <label class="block">
+                <span class="text-sm text-gray-700">Student ID</span>
+                <input type="text" name="student_id" value="{{ member.student_id }}" class="mt-1 block w-full px-3 py-2 border rounded" />
+              </label>
+
+              <label class="block">
+                <span class="text-sm text-gray-700">Course</span>
+                <input type="text" name="course" value="{{ member.course }}" class="mt-1 block w-full px-3 py-2 border rounded" />
+              </label>
+              <label class="block">
+                <span class="text-sm text-gray-700">Year</span>
+                <input type="text" name="year" value="{{ member.year }}" class="mt-1 block w-full px-3 py-2 border rounded" />
+              </label>
+
+              <label class="block">
+                <span class="text-sm text-gray-700">Role</span>
+                <select name="role" class="mt-1 block w-full px-3 py-2 border rounded">
+                  <option value="member" {% if member.role == 'member' %}selected{% endif %}>Member</option>
+                  <option value="admin" {% if member.role == 'admin' %}selected{% endif %}>Admin</option>
+                  <option value="superadmin" {% if member.role == 'superadmin' %}selected{% endif %}>Superadmin</option>
+                </select>
+              </label>
+
+              <label class="block">
+                <span class="text-sm text-gray-700">Status</span>
+                <select name="membership_status" class="mt-1 block w-full px-3 py-2 border rounded">
+                  <option value="active" {% if member.membership_status == 'active' %}selected{% endif %}>Active</option>
+                  <option value="inactive" {% if member.membership_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="mt-4 flex justify-end space-x-2">
+              <button type="button" class="px-4 py-2 bg-gray-200 rounded modal-close" data-modal-close="edit-modal-{{ member.id }}">Cancel</button>
+              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ---------- PROMOTE CONFIRMATION modal ---------- -->
+      <div id="promote-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black opacity-40"></div>
+        <div class="bg-white rounded-lg shadow-lg max-w-md w-full z-10 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Confirm Promote</h3>
+            <button type="button" class="text-gray-500 modal-close" data-modal-close="promote-modal-{{ member.id }}">✕</button>
+          </div>
+          <p>Are you sure you want to promote <strong>{{ member.user.get_full_name|default:member.user.username }}</strong>?</p>
+          <div class="mt-4 flex justify-end space-x-2">
+            <button type="button" class="px-4 py-2 bg-gray-200 rounded modal-close" data-modal-close="promote-modal-{{ member.id }}">Cancel</button>
+            <form method="post" action="{% url 'accounts:promote_member' member.id %}">
+              {% csrf_token %}
+              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Yes, promote</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------- DEMOTE CONFIRMATION modal ---------- -->
+      <div id="demote-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black opacity-40"></div>
+        <div class="bg-white rounded-lg shadow-lg max-w-md w-full z-10 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Confirm Demote</h3>
+            <button type="button" class="text-gray-500 modal-close" data-modal-close="demote-modal-{{ member.id }}">✕</button>
+          </div>
+          <p>Are you sure you want to demote <strong>{{ member.user.get_full_name|default:member.user.username }}</strong>?</p>
+          <div class="mt-4 flex justify-end space-x-2">
+            <button type="button" class="px-4 py-2 bg-gray-200 rounded modal-close" data-modal-close="demote-modal-{{ member.id }}">Cancel</button>
+            <form method="post" action="{% url 'accounts:demote_member' member.id %}">
+              {% csrf_token %}
+              <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded">Yes, demote</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVATE modal -->
+      <div id="activate-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black opacity-40"></div>
+        <div class="bg-white rounded-lg shadow-lg max-w-md w-full z-10 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Confirm Activate</h3>
+            <button type="button" class="text-gray-500 modal-close" data-modal-close="activate-modal-{{ member.id }}">✕</button>
+          </div>
+          <p>Activate <strong>{{ member.user.get_full_name|default:member.user.username }}</strong>?</p>
+          <div class="mt-4 flex justify-end space-x-2">
+            <button type="button" class="px-4 py-2 bg-gray-200 rounded modal-close" data-modal-close="activate-modal-{{ member.id }}">Cancel</button>
+            <form method="post" action="{% url 'accounts:activate_member' member.id %}">
+              {% csrf_token %}
+              <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Yes, activate</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEACTIVATE modal -->
+      <div id="deactivate-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black opacity-40"></div>
+        <div class="bg-white rounded-lg shadow-lg max-w-md w-full z-10 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Confirm Deactivate</h3>
+            <button type="button" class="text-gray-500 modal-close" data-modal-close="deactivate-modal-{{ member.id }}">✕</button>
+          </div>
+          <p>Deactivate <strong>{{ member.user.get_full_name|default:member.user.username }}</strong>?</p>
+          <div class="mt-4 flex justify-end space-x-2">
+            <button type="button" class="px-4 py-2 bg-gray-200 rounded modal-close" data-modal-close="deactivate-modal-{{ member.id }}">Cancel</button>
+            <form method="post" action="{% url 'accounts:deactivate_member' member.id %}">
+              {% csrf_token %}
+              <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded">Yes, deactivate</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    {% endfor %}
+  </div>
+
+  <!-- messages -->
+  {% if messages %}
+    <div class="mt-6">
+      {% for message in messages %}
+        <div class="mb-2 p-3 rounded {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</div>
+
+{% block scripts %}
+<script src="{% static 'accounts/js/membership.js' %}"></script>
+{% endblock %}
+{% endblock %}

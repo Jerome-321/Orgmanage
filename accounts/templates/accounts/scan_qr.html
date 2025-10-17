@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scan QR Code</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+  <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+    <h1 class="text-xl font-semibold mb-4">Scan QR Code</h1>
+    <div id="reader" style="width: 300px; margin: 0 auto;"></div>
+    <p id="scan-result" class="mt-4 text-gray-600"></p>
+
+    <a href="{% url 'accounts:event_list' %}"
+       class="mt-6 inline-block bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded">
+       Back
+    </a>
+  </div>
+
+  <script>
+    const resultEl = document.getElementById('scan-result');
+    const html5QrCode = new Html5Qrcode("reader");
+
+    function onScanSuccess(decodedText) {
+      resultEl.textContent = `Scanned: ${decodedText}`;
+      html5QrCode.stop();
+
+      // ✅ Optional: redirect after scanning
+      // Example: if your QR code contains a URL to an event attendance page
+      if (decodedText.startsWith("http")) {
+        window.location.href = decodedText;
+      }
+    }
+
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length) {
+        html5QrCode.start(
+          { facingMode: "environment" }, // use back camera if available
+          { fps: 10, qrbox: 250 },
+          onScanSuccess
+        );
+      }
+    }).catch(err => {
+      resultEl.textContent = "Camera error: " + err;
+    });
+  </script>
+</body>
+</html>
