@@ -15,7 +15,9 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+DEBUG = True 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -126,5 +128,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = "/after-login/"
 LOGOUT_REDIRECT_URL = 'accounts:login'
-
 LOGIN_URL = 'accounts:login'

@@ -2,7 +2,8 @@ from django.urls import path
 from . import views
 
 app_name = "accounts"
-
+from django.conf import settings
+from django.conf.urls.static import static
 urlpatterns = [
     
     # Role-based dashboards
@@ -24,10 +25,10 @@ urlpatterns = [
     path("members/<int:member_id>/demote/", views.demote_member, name="demote_member"),
     path("members/<int:member_id>/activate/", views.activate_member, name="activate_member"),
     path("members/<int:member_id>/deactivate/", views.deactivate_member, name="deactivate_member"),
-
+    path("profile/update/", views.profile_update, name="profile_update"),
     # Events
     path("events/", views.event_list, name="event_list"),
-    path("events/create/", views.event_form, name="event_create"),  # ✅ keep only one
+    path("events/create/", views.event_form, name="event_create"),  
     path("events/<int:event_id>/edit/", views.event_form, name="event_edit"),
     path("events/<int:event_id>/delete/", views.event_delete, name="event_delete"),
     path("register-event/<int:event_id>/", views.register_event, name="register_event"),
@@ -40,12 +41,17 @@ urlpatterns = [
     path("announcements/delete/<int:announcement_id>/", views.announcement_delete, name="delete_announcement"),
     path("audit-logs/", views.audit_log_list, name="audit_log_list"),
     path("after-login/", views.redirect_after_login, name="redirect_after_login"),
+    
 
     # Achievements
     path("add-achievement/", views.add_achievement, name="add_achievement"),
-
+    path("delete-achievement/<int:achievement_id>/", views.delete_achievement, name="delete_achievement"),
+    path("view-achievement/<int:id>/", views.view_achievement, name="view_achievement"),
+    path('delete-achievement/<int:achievement_id>/', views.delete_achievement, name='delete_achievement'),
     # Attendance
     path("attendance/scan/<int:event_id>/<str:token>/", views.admin_scan_attendance, name="admin_scan_attendance"),
     path("view-qr/<int:event_id>/", views.view_qr, name="view_qr"),
     path('scan-qr/', views.scan_qr, name='scan_qr'),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

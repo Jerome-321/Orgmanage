@@ -3,7 +3,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.conf import settings
-# -----------------------
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone# -----------------------
 # Role and Membership
 # -----------------------
 ROLE_CHOICES = (
@@ -81,9 +83,6 @@ class EventRegistration(models.Model):
 # -----------------------
 # Announcements
 # -----------------------
-from django.db import models
-from django.contrib.auth.models import User
-
 class Announcement(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
@@ -150,9 +149,6 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s profile"
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.contrib.auth.models import User
 
 @receiver(post_save, sender=User)
 def create_member_for_new_user(sender, instance, created, **kwargs):
@@ -166,15 +162,6 @@ def save_member_profile(sender, instance, **kwargs):
     if hasattr(instance, 'member'):
         instance.member.save()
 
-class Achievement(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="achievements")
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.title} - {self.user.username}"
-    
 # -----------------------
 # ATTENDANCE
 # -----------------------
@@ -190,3 +177,17 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.event} @ {self.timestamp}"
+
+class Achievement(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="achievements"
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    date_earned = models.DateField(default=timezone.now)
+    certificate = models.FileField(upload_to='certificates/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"

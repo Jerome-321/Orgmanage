@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from .models import Event  # import your Event model
 from django.contrib.auth.forms import AuthenticationForm
 from .models import Member, Announcement
-
+from .models import Achievement
 
 # --------------------
 # Custom Validators
@@ -164,3 +164,8 @@ class AnnouncementForm(forms.ModelForm):
         widgets = {
             "content": forms.Textarea(attrs={"rows": 4}),
         }
+
+class AchievementForm(forms.ModelForm):
+    class Meta:
+        model = Achievement
+        fields = ['title', 'description', 'date_earned', 'certificate']
