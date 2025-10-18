@@ -8,7 +8,6 @@
   <h1 class="text-2xl font-bold text-gray-800 mb-2">Member Management</h1>
   <p class="text-gray-500 mb-6">Manage student profiles and memberships</p>
 
-  <!-- Search & Filters -->
   <div class="bg-white shadow rounded-lg p-4 mb-6 flex flex-col md:flex-row items-start md:items-center md:space-x-4">
     <form method="get" action="{% url 'accounts:membership_list' %}" class="flex-1">
       <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by name, email, student ID, or course..."
@@ -21,11 +20,9 @@
     </div>
   </div>
 
-  <!-- Members Grid -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for member in members %}
       <div class="bg-white shadow rounded-lg p-6 relative">
-        <!-- status badge -->
         <span class="absolute top-3 right-3 text-xs px-2 py-1 rounded-full {% if member.membership_status == 'active' %}bg-green-100 text-green-600{% else %}bg-red-100 text-red-600{% endif %}">
           {{ member.membership_status }}
         </span>
@@ -57,14 +54,13 @@
         <p><strong>Joined:</strong> {{ member.date_joined|date:"d/m/Y" }}</p>
         <p><strong>Achievements:</strong> {{ member.achievements.count }}</p>
 
-        <!-- Actions -->
         <div class="mt-4 flex flex-wrap gap-2">
           {% if user.member.role in "Admin superadmin" %}
           <button type="button" data-modal-target="edit-modal-{{ member.id }}" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 modal-open">
             Edit
           </button>
           {% endif %}
-          <!-- Promote / Demote (only shown to superadmin) -->
+
           {% if request.user.is_superuser %}
             {% if member.role == 'member' %}
               <button type="button" data-modal-target="promote-modal-{{ member.id }}" class="px-3 py-1 bg-blue-100 text-blue-700 rounded modal-open">
@@ -82,7 +78,6 @@
             {% endif %}
           {% endif %}
 
-          <!-- Activate / Deactivate -->
           {% if member.membership_status == 'active' %}
             <button type="button" data-modal-target="deactivate-modal-{{ member.id }}" class="px-3 py-1 bg-red-100 text-red-700 rounded modal-open">
               Deactivate
@@ -95,7 +90,6 @@
         </div>
       </div>
 
-      <!-- ---------- EDIT MODAL (per-member) ---------- -->
       <div id="edit-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
         <div class="absolute inset-0 bg-black opacity-40"></div>
         <div class="bg-white rounded-lg shadow-lg max-w-xl w-full z-10 p-6">
@@ -158,8 +152,6 @@
           </form>
         </div>
       </div>
-
-      <!-- ---------- PROMOTE CONFIRMATION modal ---------- -->
       <div id="promote-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
         <div class="absolute inset-0 bg-black opacity-40"></div>
         <div class="bg-white rounded-lg shadow-lg max-w-md w-full z-10 p-6">
@@ -178,7 +170,6 @@
         </div>
       </div>
 
-      <!-- ---------- DEMOTE CONFIRMATION modal ---------- -->
       <div id="demote-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
         <div class="absolute inset-0 bg-black opacity-40"></div>
         <div class="bg-white rounded-lg shadow-lg max-w-md w-full z-10 p-6">
@@ -197,7 +188,6 @@
         </div>
       </div>
 
-      <!-- ACTIVATE modal -->
       <div id="activate-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
         <div class="absolute inset-0 bg-black opacity-40"></div>
         <div class="bg-white rounded-lg shadow-lg max-w-md w-full z-10 p-6">
@@ -215,8 +205,6 @@
           </div>
         </div>
       </div>
-
-      <!-- DEACTIVATE modal -->
       <div id="deactivate-modal-{{ member.id }}" class="fixed inset-0 z-50 hidden items-center justify-center px-4">
         <div class="absolute inset-0 bg-black opacity-40"></div>
         <div class="bg-white rounded-lg shadow-lg max-w-md w-full z-10 p-6">
@@ -238,7 +226,6 @@
     {% endfor %}
   </div>
 
-  <!-- messages -->
   {% if messages %}
     <div class="mt-6">
       {% for message in messages %}

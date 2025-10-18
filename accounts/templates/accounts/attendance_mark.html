@@ -55,8 +55,6 @@
     {% if event %}
       <p class="mt-6 text-sm text-gray-500">Event: <strong>{{ event.title }}</strong></p>
     {% endif %}
-
-    <!-- ✅ Back to Events Button -->
     <a href="{% url 'accounts:event_list' %}" class="inline-block mt-6 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800">
       Back to Events
     </a>

@@ -8,20 +8,16 @@
   <h1 class="text-2xl font-bold text-gray-800 mb-6">Events</h1>
   <p class="text-gray-600">register for upcoming events</p>
   
-  <!-- Filters -->
   <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
   <div class="flex items-center flex-wrap gap-3">
-    <!-- Filter Buttons -->
     <div class="flex gap-3">
       <button class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm">All Events</button>
       <button class="px-4 py-2 rounded-md bg-gray-100 text-gray-700 text-sm">Upcoming</button>
       <button class="px-4 py-2 rounded-md bg-gray-100 text-gray-700 text-sm">Completed</button>
     </div>
 
-    <!-- Spacer -->
     <div class="flex-1"></div>
 
-    <!-- Create Event Button -->
     {% if user.member.role in "admin superadmin" %}
     <button onclick="openModal('modalCreate')" 
       class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm shadow">
@@ -31,7 +27,6 @@
   </div>
 </div>
 
-  <!-- Cards Grid -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for event in events %}
     <div class="bg-white rounded-lg shadow p-4 flex flex-col justify-between">
@@ -49,10 +44,9 @@
           <div>📅 {{ event.start_datetime|date:"M d, Y H:i" }} </div>
           <div>📍 {{ event.location }}</div>
           <div><strong>Slots:</strong> {{ event.slots_remaining }}</div>
-          <div><strong>Registered:</strong>{{ event.registered_count }}</div>
         </div>
       </div>
-      <!-- Buttons -->
+      
       <div class="mt-4 flex flex-wrap gap-2">
         <button onclick="openModal('modalView{{ event.id }}')" 
            class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 modal-open">View</button>
@@ -63,6 +57,10 @@
 
         <button onclick="openModal('modalDelete{{ event.id }}')" 
           class="bg-red-500 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">Delete</button>
+          <a href="{% url 'accounts:scan_qr' %}">
+        <a href="{% url 'accounts:view_qr' event.id %}" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm">View QR</a>
+          </a>
+
         {% else %}
         {% if event.registered %}
         <button onclick="openModal('modalCancel{{ event.id }}')" 
@@ -73,18 +71,19 @@
         {% endif %}
         {% endif %}
         {% if event.registered %}
+      <a href="{% url 'accounts:view_qr' event.id %}" 
+     class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+     View QR
+  </a>
 {% endif %}
       </div>
     </div>
-
-    <!-- ===== Modals ===== -->
-    <!-- View Modal -->
-    <!-- 🌟 View Event Modal -->
+>
 <div id="modalView{{ event.id }}" tabindex="-1" aria-hidden="true"
   class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
   <div class="relative w-full max-w-lg p-6">
     <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
-      <!-- Header -->
+      
       <div class="flex justify-between items-start border-b border-gray-200 p-6">
         <div>
           <h3 class="text-2xl font-semibold text-gray-800">{{ event.title }}</h3>
@@ -104,9 +103,8 @@
         </button>
       </div>
 
-      <!-- Body -->
+      
       <div class="p-6 space-y-4 text-gray-700">
-        <!-- Date -->
         <div class="flex items-center gap-3">
           <div class="bg-blue-100 text-blue-600 p-2 rounded-lg">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -120,7 +118,6 @@
           </div>
         </div>
 
-        <!-- Location -->
         <div class="flex items-center gap-3">
           <div class="bg-purple-100 text-purple-600 p-2 rounded-lg">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -135,20 +132,19 @@
           </div>
         </div>
 
-        <!-- Slots -->
+      
         <div class="flex justify-between text-sm text-gray-600 mt-4 border-t border-gray-100 pt-4">
           <span><strong>Total Slots:</strong> {{ event.capacity }}</span>
           <span><strong>Remaining:</strong> {{ event.slots_remaining }}</span>
         </div>
 
-        <!-- Description -->
+       
         <div class="mt-4">
           <h4 class="text-sm font-semibold text-gray-800 mb-1">Description</h4>
           <p class="text-gray-600 leading-relaxed">{{ event.description }}</p>
         </div>
       </div>
 
-      <!-- Footer -->
       <div class="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50">
         {% if user.member.role in "admin superadmin" %}
           <button onclick="openModal('modalEdit{{ event.id }}')" 
@@ -165,10 +161,6 @@
                 class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm">Register Now</button>
             {% endif %}
           {% endif %}
-      <a href="{% url 'accounts:view_qr' event.id %}" 
-     class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm">
-     View QR
-  </a>
         {% endif %}
         <button onclick="closeModal('modalView{{ event.id }}')" 
           class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm">Close</button>
@@ -179,11 +171,9 @@
 </div>
 
     {% if user.member.role in "admin superadmin" %}
-    <!-- Edit Event Modal -->
 <div id="modalEdit{{ event.id }}" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative">
 
-    <!-- Header -->
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-2xl font-semibold text-gray-800 flex items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -195,12 +185,9 @@
         ✕
       </button>
     </div>
-
-    <!-- Form -->
     <form method="post" action="{% url 'accounts:event_edit' event.id %}" class="space-y-4">
       {% csrf_token %}
 
-      <!-- Event Title -->
       <div>
         <label for="id_title_{{ event.id }}" class="block text-sm font-medium text-gray-700">Event Title</label>
         <input type="text" name="title" id="id_title_{{ event.id }}" value="{{ event.title }}"
@@ -208,7 +195,6 @@
           placeholder="Enter event title" required>
       </div>
 
-      <!-- Description -->
       <div>
         <label for="id_description_{{ event.id }}" class="block text-sm font-medium text-gray-700">Description</label>
         <textarea name="description" id="id_description_{{ event.id }}" rows="3"
@@ -216,7 +202,6 @@
           placeholder="Brief event description">{{ event.description }}</textarea>
       </div>
 
-      <!-- Date and Time -->
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label for="id_start_datetime_{{ event.id }}" class="block text-sm font-medium text-gray-700">Start Date & Time</label>
@@ -232,7 +217,6 @@
         </div>
       </div>
 
-      <!-- Location -->
       <div>
         <label for="id_location_{{ event.id }}" class="block text-sm font-medium text-gray-700">Location</label>
         <input type="text" name="location" id="id_location_{{ event.id }}" value="{{ event.location }}"
@@ -240,7 +224,6 @@
           placeholder="Ex. 4th Floor Hall, Main Building" required>
       </div>
 
-      <!-- Slots -->
       <div>
         <label for="id_total_slots_{{ event.id }}" class="block text-sm font-medium text-gray-700">Total Slots</label>
         <input type="number" name="total_slots" id="id_total_slots_{{ event.id }}" value="{{ event.total_slots }}" min="1"
@@ -248,7 +231,6 @@
           placeholder="Enter number of slots" required>
       </div>
 
-      <!-- Buttons -->
       <div class="mt-6 flex justify-end gap-2">
         <button type="button" onclick="closeModal('modalEdit{{ event.id }}')"
           class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">Cancel</button>
@@ -259,8 +241,6 @@
   </div>
 </div>
 
-
-    <!-- Delete Modal -->
     <div id="modalDelete{{ event.id }}" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
         <h3 class="text-xl font-semibold mb-4">Delete Event</h3>
@@ -275,7 +255,6 @@
     {% endif %}
 
     {% if user.member.role not in "admin superadmin" %}
-    <!-- Register Modal -->
     <div id="modalRegister{{ event.id }}" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
         <h3 class="text-xl font-semibold mb-4">Register for Event</h3>
@@ -287,8 +266,6 @@
         </form>
       </div>
     </div>
-
-    <!-- Cancel Registration Modal -->
     <div id="modalCancel{{ event.id }}" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
         <h3 class="text-xl font-semibold mb-4">Cancel Registration</h3>
@@ -305,35 +282,27 @@
   </div>
 </div>
 {% if user.member.role == "admin" or user.member.role == "superadmin" %}
-<!-- Create Event Modal -->
 <div id="modalCreate" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative">
-
-    <!-- Header -->
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-2xl font-semibold text-gray-800">Create Event</h3>
       <button type="button" onclick="closeModal('modalCreate')" class="text-gray-500 hover:text-gray-700">✕</button>
     </div>
-
-    <!-- Form -->
     <form id="createEventForm" method="post" action="{% url 'accounts:event_create' %}" class="space-y-4">
       {% csrf_token %}
 
-      <!-- Title -->
       <div>
         <label for="id_title" class="block text-sm font-medium text-gray-700">Event Title</label>
         <input type="text" name="title" id="id_title" class="mt-1 w-full rounded-lg border-gray-300" required>
         <div class="error-message text-red-500 text-sm mt-1" data-error-for="title"></div>
       </div>
 
-      <!-- Description -->
       <div>
         <label for="id_description" class="block text-sm font-medium text-gray-700">Description</label>
         <textarea name="description" id="id_description" rows="3" class="mt-1 w-full rounded-lg border-gray-300"></textarea>
         <div class="error-message text-red-500 text-sm mt-1" data-error-for="description"></div>
       </div>
 
-      <!-- Start / End Date -->
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label for="id_start_datetime" class="block text-sm font-medium text-gray-700">Start Date & Time</label>
@@ -347,21 +316,18 @@
         </div>
       </div>
 
-      <!-- Location -->
       <div>
         <label for="id_location" class="block text-sm font-medium text-gray-700">Location</label>
         <input type="text" name="location" id="id_location" class="mt-1 w-full rounded-lg border-gray-300" required>
         <div class="error-message text-red-500 text-sm mt-1" data-error-for="location"></div>
       </div>
 
-      <!-- Max Slots -->
       <div>
         <label for="id_max_slots" class="block text-sm font-medium text-gray-700">Total Slots</label>
         <input type="number" name="max_slots" id="id_max_slots" min="1" class="mt-1 w-full rounded-lg border-gray-300" required>
         <div class="error-message text-red-500 text-sm mt-1" data-error-for="max_slots"></div>
       </div>
-
-      <!-- Scan Qr -->
+      
       <div class="mt-6 flex justify-end gap-2">
         <button type="button" onclick="closeModal('modalCreate')" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">Cancel</button>
         <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Create</button>

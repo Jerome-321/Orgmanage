@@ -3,19 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <title>Scan QR Code</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center min-h-screen p-4">
 
-  <div class="bg-white p-6 rounded-lg shadow-lg text-center">
-    <h1 class="text-xl font-semibold mb-4">Scan QR Code</h1>
-    <div id="reader" style="width: 300px; margin: 0 auto;"></div>
-    <p id="scan-result" class="mt-4 text-gray-600"></p>
+  <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg text-center w-full max-w-sm sm:max-w-md">
+    <h1 class="text-2xl font-bold mb-4 text-gray-800">Scan QR Code</h1>
+
+    <div id="reader" class="mx-auto w-full max-w-[320px] rounded-lg border border-gray-200 shadow-sm overflow-hidden"></div>
+
+    <p id="scan-result" class="mt-4 text-gray-600 text-sm sm:text-base break-words"></p>
 
     <a href="{% url 'accounts:event_list' %}"
-       class="mt-6 inline-block bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded">
-       Back
+       class="mt-6 inline-block w-full bg-gray-700 hover:bg-gray-800 text-white py-2.5 rounded-lg font-medium transition">
+       Back to Events
     </a>
   </div>
 
@@ -27,8 +30,6 @@
       resultEl.textContent = `Scanned: ${decodedText}`;
       html5QrCode.stop();
 
-      // ✅ Optional: redirect after scanning
-      // Example: if your QR code contains a URL to an event attendance page
       if (decodedText.startsWith("http")) {
         window.location.href = decodedText;
       }
@@ -37,10 +38,12 @@
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length) {
         html5QrCode.start(
-          { facingMode: "environment" }, // use back camera if available
+          { facingMode: "environment" },
           { fps: 10, qrbox: 250 },
           onScanSuccess
         );
+      } else {
+        resultEl.textContent = "No camera found on this device.";
       }
     }).catch(err => {
       resultEl.textContent = "Camera error: " + err;

@@ -152,16 +152,7 @@ def superadmin_dashboard(request):
         'logs': logs,
     })
 
-
-@login_required
-def superadmin_dashboard(request):
-    events = Event.objects.all()
-
-    for event in events:
-        event.remaining = event.max_slots - event.registrations.count()
-
-    return render(request, "accounts/superadmin_dashboard.html")
-
+    return render(request, "accounts/superadmin_dashboard.html", context)
 @login_required
 def admin_dashboard(request):
     total_members = User.objects.count()
