@@ -63,10 +63,6 @@
 
         <button onclick="openModal('modalDelete{{ event.id }}')" 
           class="bg-red-500 hover:bg-red-700 text-white px-3 py-2 rounded text-sm">Delete</button>
-          <a href="{% url 'accounts:scan_qr' %}">
-        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow">Scan QR Code</button>
-          </a>
-
         {% else %}
         {% if event.registered %}
         <button onclick="openModal('modalCancel{{ event.id }}')" 
@@ -77,10 +73,6 @@
         {% endif %}
         {% endif %}
         {% if event.registered %}
-      <a href="{% url 'accounts:view_qr' event.id %}" 
-     class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-     View QR
-  </a>
 {% endif %}
       </div>
     </div>
