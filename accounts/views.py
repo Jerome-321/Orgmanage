@@ -14,7 +14,7 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from accounts.models import ActionLog
 from django.core.paginator import Paginator
-import io, base64,qrcode,socket
+import io, base64,qrcode,socket,uuid
 from io import BytesIO
 from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
 from django.core import signing
@@ -25,6 +25,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import now
 from django.http import FileResponse, Http404
 import os
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
 
 @login_required
@@ -518,56 +520,44 @@ def event_delete(request, event_id):
 
     return render(request, "accounts/event_confirm_delete.html", {"event": event})
 
-
+@login_required
 def register_event(request, event_id):
     event = get_object_or_404(Event, id=event_id)
 
-    # already registered?
-    existing = EventRegistration.objects.filter(user=request.user, event=event).first()
-    if existing:
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({"status": "already_registered", "message": "Already registered."}, status=400)
-        messages.info(request, "You are already registered for this event.")
-        return redirect("accounts:event_list")
+    # Prevent duplicate registration
+    if Attendance.objects.filter(user=request.user, event=event).exists():
+        return JsonResponse({"status": "already_registered", "message": "Already registered."})
 
-    # create registration
-    EventRegistration.objects.create(user=request.user, event=event)
+    # Generate a unique QR token
+    qr_token = str(uuid.uuid4())
 
-    AuditLog.objects.create(
+    # Create attendance entry
+    attendance = Attendance.objects.create(
         user=request.user,
-        action="register_event",
-        target=f"Registered for event '{event.title}'"
+        event=event,
+        qr_code=qr_token,
+        status="Absent"
     )
 
-    # generate signed token + QR
-    payload = {"user_id": request.user.id, "event_id": event.id}
-    token = signing.dumps(payload, salt="attendance-salt-v1")
-
+    # Build the URL for scanning
     ip = socket.gethostbyname(socket.gethostname())
-    mark_url = f"http://{ip}:8000/attendance/scan/{event.id}/{token}/"
+    qr_url = f"http://{ip}:8000/scan/{qr_token}/"
 
+    # Generate QR image
     qr = qrcode.QRCode(box_size=8, border=3)
-    qr.add_data(mark_url)
+    qr.add_data(qr_url)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
-    buf.seek(0)
     qr_base64 = base64.b64encode(buf.getvalue()).decode("utf-8")
 
-    # AJAX response
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        return JsonResponse({
-            "status": "registered",
-            "qr_base64": qr_base64,
-            "mark_url": mark_url,
-            "slots_remaining": event.slots_remaining()
-        })
-
-    # non-AJAX fallback: show QR page
-    messages.success(request, f"You have successfully registered for {event.title}!")
-    return render(request, "accounts/view_qr.html", {"event": event, "qr_image": qr_base64})
+    return render(request, "accounts/view_qr.html", {
+        "event": event,
+        "qr_image": qr_base64,
+        "qr_url": qr_url,
+    })
 
 
 @login_required
@@ -873,18 +863,47 @@ def admin_scan_attendance(request, event_id, token):
         "event": event,
     })
 
+@login_required
+def attendance_report_view(request, event_id):
+    """Show attendance report dashboard for a specific event."""
+    if not (request.user.is_superuser or getattr(request.user.member, "role", "").lower() in ["admin", "superadmin"]):
+        return HttpResponseForbidden("Only admins and superadmins can view reports.")
+
+    event = get_object_or_404(Event, pk=event_id)
+    attendances = Attendance.objects.filter(event=event).select_related("user")
+
+    total_registered = attendances.count()
+    total_present = attendances.filter(status="Present").count()
+    attendance_percentage = (total_present / total_registered * 100) if total_registered > 0 else 0
+
+    return render(request, "accounts/attendance_report.html", {
+        "event": event,
+        "attendances": attendances,
+        "total_registered": total_registered,
+        "total_present": total_present,
+        "attendance_percentage": round(attendance_percentage, 2),
+    })
 
 @csrf_exempt
-def scan_qr_view(request):
-    if request.method == 'POST':
-        qr_data = request.POST.get('qr_data')
-        try:
-            attendance = Attendance.objects.get(qr_code=qr_data)
-            attendance.status = 'Present'
-            attendance.save()
-            return JsonResponse({'success': True, 'message': f"{attendance.user.username} marked present!"})
-        except Attendance.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'QR code not found.'})
-    return JsonResponse({'error': 'Invalid request.'})
-def scan_qr(request):
-    return render(request, 'accounts/scan_qr.html')
+def scan_qr_view(request, qr_code):
+    try:
+        attendance = Attendance.objects.select_related("event", "user").get(qr_code=qr_code)
+        now = timezone.now()
+
+        if now > attendance.event.start_datetime:
+            attendance.status = "Late"
+        else:
+            attendance.status = "Present"
+
+        attendance.save(update_fields=["status", "timestamp"])
+
+        return JsonResponse({
+            "success": True,
+            "message": f"{attendance.user.username} marked {attendance.status}!"
+        })
+
+    except Attendance.DoesNotExist:
+        return JsonResponse({"success": False, "message": "QR code not found."})
+@login_required
+def scan_qr_page(request):
+    return render(request, "accounts/scan_qr.html")

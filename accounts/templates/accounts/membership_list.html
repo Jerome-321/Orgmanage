@@ -225,15 +225,6 @@
 
     {% endfor %}
   </div>
-
-  {% if messages %}
-    <div class="mt-6">
-      {% for message in messages %}
-        <div class="mb-2 p-3 rounded {{ message.tags }}">{{ message }}</div>
-      {% endfor %}
-    </div>
-  {% endif %}
-
 </div>
 
 {% block scripts %}

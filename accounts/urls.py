@@ -52,7 +52,12 @@ urlpatterns = [
     # Attendance
     path("attendance/scan/<int:event_id>/<str:token>/", views.admin_scan_attendance, name="admin_scan_attendance"),
     path("view-qr/<int:event_id>/", views.view_qr, name="view_qr"),
-    path("scan-qr/", views.scan_qr, name="scan_qr"),
+    path("attendance_report/<int:event_id>/", views.attendance_report_view, name="attendance_report"),
+    path("attendance/scan/<int:event_id>/<str:token>/", views.scan_qr_view, name="scan_qr_view"),
+    path("scan/<str:qr_code>/", views.scan_qr_view, name="scan_qr_view"),
+    path("attendance_report/<int:event_id>/", views.attendance_report_view, name="attendance_report"),
+    path("scan/", views.scan_qr_page, name="scan_qr_page"),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

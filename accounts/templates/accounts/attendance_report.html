@@ -1,0 +1,64 @@
+{% extends 'accounts/base.html' %}
+{% block content %}
+<div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-8 mt-10">
+  <div class="flex justify-between items-center mb-8">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Attendance Report: {{ event.title }}</h2>
+    <a href="{% url 'accounts:event_list' %}"
+      class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm btn btn-primary mb-4">← Back to Events
+    </a>
+  </div>
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-3 gap-6 mb-8">
+    <div class="bg-blue-100 p-5 rounded-xl text-center">
+      <h3 class="text-lg font-semibold">Total Registered</h3>
+      <p class="text-3xl font-bold text-blue-700">{{ total_registered }}</p>
+    </div>
+    <div class="bg-green-100 p-5 rounded-xl text-center">
+      <h3 class="text-lg font-semibold">Present</h3>
+      <p class="text-3xl font-bold text-green-700">{{ total_present }}</p>
+    </div>
+    <div class="bg-purple-100 p-5 rounded-xl text-center">
+      <h3 class="text-lg font-semibold">Attendance Rate</h3>
+      <p class="text-3xl font-bold text-purple-700">{{ attendance_percentage }}%</p>
+    </div>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="w-full bg-gray-200 rounded-full h-4 mb-6">
+    <div class="bg-blue-600 h-4 rounded-full" style="width: {{ attendance_percentage }}%"></div>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow">
+      <thead class="bg-gray-100 text-gray-700 uppercase text-sm">
+        <tr>
+          <th class="py-3 px-6 text-left">Name</th>
+          <th class="py-3 px-6 text-left">Status</th>
+          <th class="py-3 px-6 text-left">Marked On</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in attendances %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="py-3 px-6">{{ a.user.username }}</td>
+          <td class="py-3 px-6">
+            {% if a.status == "Present" %}
+              <span class="text-green-600 font-semibold">{{ a.status }}</span>
+            {% else %}
+              <span class="text-red-600 font-semibold">{{ a.status }}</span>
+            {% endif %}
+          </td>
+          <td class="py-3 px-6">{{ a.updated_at|date:"M d, Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-center py-6 text-gray-500">No attendance records yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Export Button -->
+  
+</div>
+{% endblock %}

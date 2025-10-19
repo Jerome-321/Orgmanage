@@ -192,8 +192,33 @@ def save_member_profile(sender, instance, **kwargs):
 # -----------------------
 
 class Attendance(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attendances")
-    event = models.ForeignKey("Event", on_delete=models.CASCADE, related_name="attendances")
+    STATUS_CHOICES = [
+        ("Present", "Present"),
+        ("Late", "Late"),
+        ("Absent", "Absent"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="attendances"
+    )
+    event = models.ForeignKey(
+        "Event",
+        on_delete=models.CASCADE,
+        related_name="attendances"
+    )
+    qr_code = models.CharField(
+        max_length=255,
+        unique=True,
+        null=True,
+        blank=True
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="Absent"
+    )
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -201,7 +226,7 @@ class Attendance(models.Model):
         ordering = ("-timestamp",)
 
     def __str__(self):
-        return f"{self.user} - {self.event} @ {self.timestamp}"
+        return f"{self.user} - {self.event} ({self.status})"
 
 class Achievement(models.Model):
     user = models.ForeignKey(
