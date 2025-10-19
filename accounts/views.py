@@ -25,17 +25,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import now
 from django.http import FileResponse, Http404
 import os
-def register_view(request):
-    if request.method == "POST":
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Account created successfully! Please log in.")
-            return redirect("accounts:login")
-    else:
-        form = RegisterForm()
 
-    return render(request, "accounts/register.html", {"form": form})
 
 @login_required
 def redirect_after_login(request):
@@ -43,7 +33,7 @@ def redirect_after_login(request):
     user = request.user
     if user.is_superuser:
         return redirect("accounts:superadmin_dashboard")
-    elif hasattr(user, "member") and user.member.role == "Admin":
+    elif hasattr(user, "member") and user.member.role == "admin":
         return redirect("accounts:admin_dashboard")
     else:
         return redirect("accounts:member_dashboard")
@@ -55,11 +45,11 @@ def register(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
-
             
+            # Create a Member for the new user
             Member.objects.get_or_create(
                 user=user,
-                defaults={"role": "member", "membership_status": "active"},
+                defaults={"role": "member", "status": "active"}
             )
 
             messages.success(request, "Registration successful. Please log in.")
@@ -85,7 +75,7 @@ def login_view(request):
             
             if user.is_superuser:
                 return redirect("accounts:superadmin_dashboard")
-            elif hasattr(user, "member") and user.member.role == "Admin":
+            elif hasattr(user, "member") and user.member.role == "admin":
                 return redirect("accounts:admin_dashboard")
             else:
                 return redirect("accounts:member_dashboard")
@@ -125,9 +115,6 @@ def logout_view(request):
 
 
     return render(request, "accounts/login.html", {"form": form})
-def logout_view(request):
-    logout(request)
-    return redirect("login")
 
 # --- DASHBOARD & PROFILE ---
 
@@ -196,7 +183,7 @@ def member_dashboard(request):
 def dashboard(request):
     if request.user.is_superuser:
         return render(request, "accounts/superuser_dashboard.html")
-    elif hasattr(request.user, "member") and request.user.member.role == "Admin":
+    elif hasattr(request.user, "member") and request.user.member.role == "admin":
         return render(request, "accounts/admin_dashboard.html")
     else:
         return render(request, "accounts/member_dashboard.html")
@@ -269,7 +256,7 @@ def membership_list(request):
 def update_member(request, member_id):
     member = get_object_or_404(Member, id=member_id)
     user = member.user   
-    if not (request.user.is_superuser or (hasattr(request.user, "member") and request.user.member.role in ["Admin", "superadmin"])):
+    if not (request.user.is_superuser or (hasattr(request.user, "member") and request.user.member.role in ["admin", "superadmin"])):
         messages.error(request, "You are not authorized to edit members.")
         return redirect("accounts:membership_list")
 
@@ -362,7 +349,7 @@ def demote_member(request, member_id):
 @require_POST
 def activate_member(request, member_id):
     member = get_object_or_404(Member, id=member_id)
-    if not (request.user.is_superuser or (hasattr(request.user, "member") and request.user.member.role in ["Admin","superadmin"])):
+    if not (request.user.is_superuser or (hasattr(request.user, "member") and request.user.member.role in ["admin","superadmin"])):
         messages.error(request, "You are not authorized.")
         return redirect("accounts:membership_list")
     old = member.membership_status
@@ -376,7 +363,7 @@ def activate_member(request, member_id):
 @require_POST
 def deactivate_member(request, member_id):
     member = get_object_or_404(Member, id=member_id)
-    if not (request.user.is_superuser or (hasattr(request.user, "member") and request.user.member.role in ["Admin","superadmin"])):
+    if not (request.user.is_superuser or (hasattr(request.user, "member") and request.user.member.role in ["admin","superadmin"])):
         messages.error(request, "You are not authorized.")
         return redirect("accounts:membership_list")
     old = member.membership_status
@@ -390,7 +377,7 @@ def deactivate_member(request, member_id):
 @login_required
 def change_membership_status(request, member_id, new_status):
     member = get_object_or_404(Member, id=member_id)
-    if hasattr(request.user, "member") and request.user.member.role in ["Admin", "superadmin"]:
+    if hasattr(request.user, "member") and request.user.member.role in ["admin", "superadmin"]:
         old_status = member.membership_status
         member.membership_status = new_status
         member.save()
@@ -407,7 +394,6 @@ def change_membership_status(request, member_id, new_status):
 
 
 # --- EVENTS ---
-
 @login_required
 def event_list(request):
     events = Event.objects.annotate(registered_count=Count('registrations'))
@@ -425,9 +411,12 @@ def event_list(request):
 @login_required
 def event_form(request, event_id=None):
     event = None
+
+    # If event_id is provided, fetch the event for editing
     if event_id:
         event = get_object_or_404(Event, id=event_id)
 
+        # Role and ownership check
         if request.user.member.role not in ["admin", "superadmin"] and event.created_by != request.user:
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"error": "Unauthorized"}, status=403)
@@ -438,8 +427,11 @@ def event_form(request, event_id=None):
         form = EventForm(request.POST, instance=event)
         if form.is_valid():
             new_event = form.save(commit=False)
-            if not event:  
+
+            # If this is a NEW event
+            if not event:
                 new_event.created_by = request.user
+                new_event.capacity = new_event.max_slots  # 👈 auto-fill capacity for new events
                 action = "create_event"
                 target = f"Created event '{new_event.title}'"
             else:
@@ -448,7 +440,7 @@ def event_form(request, event_id=None):
 
             new_event.save()
 
-            
+            # Record audit log
             AuditLog.objects.create(
                 user=request.user,
                 action=action,
@@ -462,8 +454,11 @@ def event_form(request, event_id=None):
             return redirect("accounts:event_list")
 
         else:
+            # If form is invalid
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"errors": form.errors}, status=400)
+            messages.error(request, "Form error — please check your input.")
+            print(form.errors)
 
     return redirect("accounts:event_list")
 
@@ -471,23 +466,29 @@ def event_form(request, event_id=None):
 def event_edit(request, event_id):
     event = get_object_or_404(Event, id=event_id)
 
-    if request.user.member.role not in ["Admin", "superadmin"] and event.created_by != request.user:
+    if request.user.member.role not in ["admin", "superadmin"] and event.created_by != request.user:
         messages.error(request, "You are not authorized to edit this event.")
         return redirect("accounts:event_list")
 
     if request.method == "POST":
         form = EventForm(request.POST, instance=event)
         if form.is_valid():
-            form.save()
+            updated_event = form.save(commit=False)
+            # Only update capacity if max_slots increased
+            if updated_event.max_slots > event.capacity:
+                updated_event.capacity = updated_event.max_slots
+            updated_event.save()
 
             AuditLog.objects.create(
                 user=request.user,
                 action="update_event",
-                target=f"Edited event '{event.title}'"
+                target=f"Edited event '{updated_event.title}'"
             )
 
             messages.success(request, "Event updated successfully.")
             return redirect("accounts:event_list")
+        else:
+            print(form.errors)
     else:
         form = EventForm(instance=event)
 
@@ -517,23 +518,19 @@ def event_delete(request, event_id):
 
     return render(request, "accounts/event_confirm_delete.html", {"event": event})
 
-@login_required
-def register_event(request, event_id):
-    import io, base64, socket, qrcode
-    from django.core import signing
 
+def register_event(request, event_id):
     event = get_object_or_404(Event, id=event_id)
 
-    existing_registration = EventRegistration.objects.filter(
-        user=request.user, event=event
-    ).first()
-
-    if existing_registration:
+    # already registered?
+    existing = EventRegistration.objects.filter(user=request.user, event=event).first()
+    if existing:
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({"status": "already_registered"}, status=400)
+            return JsonResponse({"status": "already_registered", "message": "Already registered."}, status=400)
         messages.info(request, "You are already registered for this event.")
         return redirect("accounts:event_list")
 
+    # create registration
     EventRegistration.objects.create(user=request.user, event=event)
 
     AuditLog.objects.create(
@@ -542,6 +539,7 @@ def register_event(request, event_id):
         target=f"Registered for event '{event.title}'"
     )
 
+    # generate signed token + QR
     payload = {"user_id": request.user.id, "event_id": event.id}
     token = signing.dumps(payload, salt="attendance-salt-v1")
 
@@ -558,21 +556,19 @@ def register_event(request, event_id):
     buf.seek(0)
     qr_base64 = base64.b64encode(buf.getvalue()).decode("utf-8")
 
+    # AJAX response
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({
             "status": "registered",
-            "registered": event.registrations.count(),
-            "slots_remaining": event.capacity - event.registrations.count(),
-            "qr_url": mark_url
+            "qr_base64": qr_base64,
+            "mark_url": mark_url,
+            "slots_remaining": event.slots_remaining()
         })
 
+    # non-AJAX fallback: show QR page
     messages.success(request, f"You have successfully registered for {event.title}!")
+    return render(request, "accounts/view_qr.html", {"event": event, "qr_image": qr_base64})
 
-    return render(request, "accounts/view_qr.html", {
-        "event": event,
-        "qr_code": qr_base64,
-        "mark_url": mark_url,
-    })
 
 @login_required
 def cancel_event(request, event_id):
@@ -582,6 +578,7 @@ def cancel_event(request, event_id):
     if registration:
         registration.delete()
 
+       
         AuditLog.objects.create(
             user=request.user,
             action="cancel_event",
@@ -603,6 +600,8 @@ def cancel_event(request, event_id):
 
     return redirect("accounts:event_list")
 
+
+
 # --- ANNOUNCEMENTS ---
 
 @login_required
@@ -618,7 +617,7 @@ def announcement_list(request):
 
 @login_required
 def create_announcement(request):
-    if not (request.user.is_superuser or hasattr(request.user, "member") and request.user.member.role in ["Admin", "superadmin"]):
+    if not (request.user.is_superuser or hasattr(request.user, "member") and request.user.member.role in ["admin", "superadmin"]):
         messages.error(request, "You are not authorized to create announcements.")
         return redirect("accounts:announcement_list")
 
@@ -651,7 +650,7 @@ def create_announcement(request):
 def announcement_edit(request, announcement_id):
     announcement = get_object_or_404(Announcement, id=announcement_id)
 
-    if not (request.user.is_superuser or (hasattr(request.user, "member") and request.user.member.role in ["Admin", "superadmin"])):
+    if not (request.user.is_superuser or (hasattr(request.user, "member") and request.user.member.role in ["admin", "superadmin"])):
         messages.error(request, "You are not authorized to edit announcements.")
         return redirect("accounts:announcement_list")
 
@@ -677,7 +676,7 @@ def announcement_edit(request, announcement_id):
 
 
 @login_required
-@user_passes_test(lambda u: u.is_superuser or (hasattr(u, "member") and u.member.role in ["Admin", "superadmin"]))
+@user_passes_test(lambda u: u.is_superuser or (hasattr(u, "member") and u.member.role in ["admin", "superadmin"]))
 def announcement_delete(request, announcement_id):
     try:
         ann = Announcement.objects.get(id=announcement_id)
@@ -806,8 +805,6 @@ def load_token(token: str, max_age: int = TOKEN_MAX_AGE_SECONDS) -> dict:
     return signing.loads(token, salt=SIGNER_SALT, max_age=max_age)
 
 
-
-@login_required
 @login_required
 def view_qr(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
@@ -840,7 +837,7 @@ def view_qr(request, event_id):
 @login_required
 def admin_scan_attendance(request, event_id, token):
     """Admin scans a member’s QR and marks their attendance."""
-    if not (request.user.is_superuser or getattr(request.user.member, "role", "").lower() == "Admin"):
+    if not (request.user.is_superuser or getattr(request.user.member, "role", "").lower() == "admin"):
         return HttpResponseForbidden("Only admins can scan attendance QR codes.")
 
     try:

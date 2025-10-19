@@ -50,7 +50,7 @@
         </div>
 
         
-        {% if user.member.role == "admin" or user.member.role == "superadmin" %}
+        {% if user.is_authenticated and user.member.role in "admin superadmin" %}
         <div class="flex space-x-6">
           <a href="{% url 'accounts:membership_list' %}"
              class="px-3 py-2 rounded-md text-sm font-medium

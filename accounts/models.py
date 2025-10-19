@@ -9,9 +9,9 @@ from django.utils import timezone# -----------------------
 # Role and Membership
 # -----------------------
 ROLE_CHOICES = (
-    ('superadmin', 'Superadmin'),
-    ('admin', 'Admin'),
-    ('member', 'Member'),
+    ('superadmin', 'superadmin'),
+    ('admin', 'admin'),
+    ('member', 'member'),
 )
 
 MEMBERSHIP_STATUS = (
@@ -20,27 +20,42 @@ MEMBERSHIP_STATUS = (
     ('alumni', 'Alumni'),
 )
 
+
 class Member(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    student_id = models.CharField(max_length=20, unique=True, null=True, blank=True)  # 👈 add this
+    student_id = models.CharField(max_length=20, unique=True, null=True, blank=True)
     course = models.CharField(max_length=100, null=True, blank=True)
     year = models.CharField(max_length=10, null=True, blank=True)
-    role = models.CharField(max_length=20, choices=[
-        ('superadmin', 'Superadmin'),
-        ('admin', 'Admin'),
-        ('member', 'Member'),
-    ], default='member')
-    status = models.CharField(max_length=10, choices=[
-        ('active', 'Active'),
-        ('inactive', 'Inactive'),
-    ], default='active')
-    joined_date = models.DateTimeField(auto_now_add=True)
-    achievements = models.TextField(blank=True, null=True)
+    role = models.CharField(
+        max_length=20,
+        choices=[
+            ('superadmin', 'superadmin'),
+            ('admin', 'admin'),
+            ('member', 'member'),
+        ],
+        default='member'
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=[
+            ('active', 'active'),
+            ('inactive', 'inactive'),
+        ],
+        default='active'
+    )
     joined_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    
-    def __str__(self):
-        return self.user.username
+    achievements = models.TextField(blank=True, null=True)
 
+    def save(self, *args, **kwargs):
+        # Auto-generate unique student_id if missing
+        if not self.student_id:
+            last_member = Member.objects.order_by('-id').first()
+            next_num = 1 if not last_member else last_member.id + 1
+            self.student_id = f"STU{next_num:04d}"  # → STU0001, STU0002, etc.
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.username} ({self.student_id})"
 
 class MembershipHistory(models.Model):
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="history")
@@ -60,14 +75,23 @@ class Event(models.Model):
     start_datetime = models.DateTimeField(default=timezone.now)
     end_datetime = models.DateTimeField(default=timezone.now)
     location = models.CharField(max_length=255, default="TBA")
-    max_slots = models.PositiveIntegerField(default=50)
+    max_slots = models.PositiveIntegerField(default=200)
     description = models.TextField(blank=True, null=True)
 
     def slots_remaining(self):
+        """Returns how many slots are still available."""
         return self.max_slots - self.registrations.count()
 
+    def total_registered(self):
+        """Returns total number of users registered."""
+        return self.registrations.count()
+
     def is_registered_by(self, user):
+        """Checks if the given user is already registered."""
         return self.registrations.filter(user=user).exists()
+
+    def __str__(self):
+        return self.title
 
 class EventRegistration(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -79,6 +103,7 @@ class EventRegistration(models.Model):
 
     def __str__(self):
         return f"{self.user.username} registered for {self.event.title}"
+
 
 # -----------------------
 # Announcements

@@ -96,10 +96,7 @@ class EventForm(forms.ModelForm):
             "start_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "end_datetime": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
-class EventForm(forms.ModelForm):
-    class Meta:
-        model = Event
-        fields = ["title", "start_datetime", "end_datetime", "location", "max_slots", "description"]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["start_datetime"].input_formats = ["%Y-%m-%dT%H:%M"]

@@ -51,11 +51,11 @@
             {{ member.role }}
           </span>
         </p>
-        <p><strong>Joined:</strong> {{ member.date_joined|date:"d/m/Y" }}</p>
-        <p><strong>Achievements:</strong> {{ member.achievements.count }}</p>
+        <p><strong>Joined:</strong> {{ user.date_joined|date:"d/m/Y" }}</p>
+        <p><strong>Achievements:</strong> {{ achievements.count }}</p>
 
         <div class="mt-4 flex flex-wrap gap-2">
-          {% if user.member.role in "Admin superadmin" %}
+        {% if user.member.role in "admin superadmin" %}
           <button type="button" data-modal-target="edit-modal-{{ member.id }}" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 modal-open">
             Edit
           </button>
@@ -115,7 +115,7 @@
               </label>
               <label class="block">
                 <span class="text-sm text-gray-700">Student ID</span>
-                <input type="text" name="student_id" value="{{ member.student_id }}" class="mt-1 block w-full px-3 py-2 border rounded" />
+                <input type="text" name="student_id" value="{{ member.student_id }}" class="mt-1 block w-full px-3 py-2 border rounded bg-gray-100 cursor-not-allowed" readonly/>
               </label>
 
               <label class="block">

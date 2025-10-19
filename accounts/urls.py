@@ -4,6 +4,7 @@ from . import views
 app_name = "accounts"
 from django.conf import settings
 from django.conf.urls.static import static
+app_name = "accounts"
 urlpatterns = [
     
     # Role-based dashboards
@@ -33,7 +34,7 @@ urlpatterns = [
     path("events/<int:event_id>/delete/", views.event_delete, name="event_delete"),
     path("register-event/<int:event_id>/", views.register_event, name="register_event"),
     path("cancel-event/<int:event_id>/", views.cancel_event, name="cancel_event"),
-    
+
     # Announcements & Audit Logs
     path("announcements/", views.announcement_list, name="announcement_list"),
     path("announcements/create/", views.create_announcement, name="create_announcement"),
@@ -51,7 +52,7 @@ urlpatterns = [
     # Attendance
     path("attendance/scan/<int:event_id>/<str:token>/", views.admin_scan_attendance, name="admin_scan_attendance"),
     path("view-qr/<int:event_id>/", views.view_qr, name="view_qr"),
-    path('scan-qr/', views.scan_qr, name='scan_qr'),
+    path("scan-qr/", views.scan_qr, name="scan_qr"),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
