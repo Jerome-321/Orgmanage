@@ -61,7 +61,7 @@
           </button>
           {% endif %}
 
-          {% if request.user.is_superuser %}
+          {% if user.member.role == 'superadmin' %}
             {% if member.role == 'member' %}
               <button type="button" data-modal-target="promote-modal-{{ member.id }}" class="px-3 py-1 bg-blue-100 text-blue-700 rounded modal-open">
                 Promote

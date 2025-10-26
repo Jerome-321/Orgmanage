@@ -41,14 +41,14 @@ def redirect_after_login(request):
         return redirect("accounts:member_dashboard")
 
 
-# --- AUTH VIEWS ---
+
 def register(request):
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
             
-            # Create a Member for the new user
+            
             Member.objects.get_or_create(
                 user=user,
                 defaults={"role": "member", "status": "active"}
@@ -118,7 +118,7 @@ def logout_view(request):
 
     return render(request, "accounts/login.html", {"form": form})
 
-# --- DASHBOARD & PROFILE ---
+
 
 @login_required
 def superadmin_dashboard(request):
@@ -168,7 +168,7 @@ def member_dashboard(request):
     total_events = Event.objects.count()
     total_announcements = Announcement.objects.count()
 
-    # Fetch initial data
+    
     events = Event.objects.order_by('start_datetime')[:5]
     announcements = Announcement.objects.order_by('-created_at')[:5]
     logs = AuditLog.objects.order_by('-timestamp')[:5]
@@ -222,7 +222,7 @@ def profile_update(request):
     )
 
 
-# --- MEMBERSHIP MANAGEMENT ---
+
 
 @login_required
 
@@ -395,7 +395,7 @@ def change_membership_status(request, member_id, new_status):
     return redirect("accounts:membership_list")
 
 
-# --- EVENTS ---
+
 @login_required
 def event_list(request):
     events = Event.objects.annotate(registered_count=Count('registrations'))
@@ -414,11 +414,11 @@ def event_list(request):
 def event_form(request, event_id=None):
     event = None
 
-    # If event_id is provided, fetch the event for editing
+    
     if event_id:
         event = get_object_or_404(Event, id=event_id)
 
-        # Role and ownership check
+        
         if request.user.member.role not in ["admin", "superadmin"] and event.created_by != request.user:
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"error": "Unauthorized"}, status=403)
@@ -430,10 +430,10 @@ def event_form(request, event_id=None):
         if form.is_valid():
             new_event = form.save(commit=False)
 
-            # If this is a NEW event
+           
             if not event:
                 new_event.created_by = request.user
-                new_event.capacity = new_event.max_slots  # 👈 auto-fill capacity for new events
+                new_event.capacity = new_event.max_slots  
                 action = "create_event"
                 target = f"Created event '{new_event.title}'"
             else:
@@ -442,7 +442,7 @@ def event_form(request, event_id=None):
 
             new_event.save()
 
-            # Record audit log
+            
             AuditLog.objects.create(
                 user=request.user,
                 action=action,
@@ -456,7 +456,7 @@ def event_form(request, event_id=None):
             return redirect("accounts:event_list")
 
         else:
-            # If form is invalid
+            
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"errors": form.errors}, status=400)
             messages.error(request, "Form error — please check your input.")
@@ -476,7 +476,7 @@ def event_edit(request, event_id):
         form = EventForm(request.POST, instance=event)
         if form.is_valid():
             updated_event = form.save(commit=False)
-            # Only update capacity if max_slots increased
+            
             if updated_event.max_slots > event.capacity:
                 updated_event.capacity = updated_event.max_slots
             updated_event.save()
@@ -524,14 +524,14 @@ def event_delete(request, event_id):
 def register_event(request, event_id):
     event = get_object_or_404(Event, id=event_id)
 
-    # Prevent duplicate registration
+    
     if Attendance.objects.filter(user=request.user, event=event).exists():
         return JsonResponse({"status": "already_registered", "message": "Already registered."})
 
     # Generate a unique QR token
     qr_token = str(uuid.uuid4())
 
-    # Create attendance entry
+    
     attendance = Attendance.objects.create(
         user=request.user,
         event=event,
@@ -539,11 +539,11 @@ def register_event(request, event_id):
         status="Absent"
     )
 
-    # Build the URL for scanning
+   
     ip = socket.gethostbyname(socket.gethostname())
     qr_url = f"http://{ip}:8000/scan/{qr_token}/"
 
-    # Generate QR image
+    
     qr = qrcode.QRCode(box_size=8, border=3)
     qr.add_data(qr_url)
     qr.make(fit=True)
@@ -730,17 +730,17 @@ def audit_log_list(request):
 
 @login_required
 def view_achievement(request, id):
-    from .models import Achievement  # import your model
+    from .models import Achievement  
 
     achievement = get_object_or_404(Achievement, id=id, user=request.user)
     if not achievement.certificate:
         raise Http404("Certificate not found.")
 
-    # Get full path to the certificate file
+    
     file_path = achievement.certificate.path
 
     if os.path.exists(file_path):
-        # Return the file for inline viewing (PDF or image)
+        
         return FileResponse(open(file_path, 'rb'), content_type='application/pdf')
     else:
         raise Http404("File does not exist on server.")
@@ -786,7 +786,7 @@ def delete_achievement(request, achievement_id):
 
 
 SIGNER_SALT = "attendance-salt-v2"
-TOKEN_MAX_AGE_SECONDS = 60 * 60 * 12  # 12 hours
+TOKEN_MAX_AGE_SECONDS = 60 * 60 * 12  
 
 def generate_token(payload: dict) -> str:
     return signing.dumps(payload, salt=SIGNER_SALT)
@@ -823,7 +823,6 @@ def view_qr(request, event_id):
 
     return render(request, "accounts/view_qr.html", {"event": event, "qr_image": qr_base64})
 
-# --- ADMIN: Scan and mark attendance ---
 @login_required
 def admin_scan_attendance(request, event_id, token):
     """Admin scans a member’s QR and marks their attendance."""
@@ -907,3 +906,5 @@ def scan_qr_view(request, qr_code):
 @login_required
 def scan_qr_page(request):
     return render(request, "accounts/scan_qr.html")
+
+

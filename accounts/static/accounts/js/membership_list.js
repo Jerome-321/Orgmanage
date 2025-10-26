@@ -1,7 +1,7 @@
-// accounts/static/accounts/js/membership.js
+
 
 document.addEventListener("click", function (e) {
-  // Open modal
+ 
   const open = e.target.closest("[data-modal-target]");
   if (open) {
     const id = open.getAttribute("data-modal-target");
@@ -13,7 +13,7 @@ document.addEventListener("click", function (e) {
     return;
   }
 
-  // Close modal
+  
   const close = e.target.closest("[data-modal-close]");
   if (close) {
     const id = close.getAttribute("data-modal-close");
@@ -25,7 +25,7 @@ document.addEventListener("click", function (e) {
     return;
   }
 
-  // Click overlay to close
+
   if (
     e.target.classList &&
     e.target.classList.contains("fixed") &&

@@ -5,13 +5,11 @@
   <meta charset="UTF-8">
   <title>{% block title %}StudentOrg{% endblock %}</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="{% static 'accounts/css/style.css' %}">
-
+ <script src="https://cdn.tailwindcss.com"></script>
   {% block extra_head %}{% endblock %}
-</head>
+ </head>
 
-<body
+ <body
   class="{% if request.resolver_match.url_name in 'login register' %}
          min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-800
          {% else %}

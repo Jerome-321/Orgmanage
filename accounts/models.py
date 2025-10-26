@@ -5,9 +5,8 @@ from django.utils import timezone
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils import timezone# -----------------------
-# Role and Membership
-# -----------------------
+from django.utils import timezone
+
 ROLE_CHOICES = (
     ('superadmin', 'superadmin'),
     ('admin', 'admin'),
@@ -47,11 +46,11 @@ class Member(models.Model):
     achievements = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
-        # Auto-generate unique student_id if missing
+        
         if not self.student_id:
             last_member = Member.objects.order_by('-id').first()
             next_num = 1 if not last_member else last_member.id + 1
-            self.student_id = f"STU{next_num:04d}"  # → STU0001, STU0002, etc.
+            self.student_id = f"STU{next_num:04d}"  
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -67,9 +66,7 @@ class MembershipHistory(models.Model):
     def __str__(self):
         return f"{self.member.user.username}: {self.prev_status} → {self.new_status}"
 
-# -----------------------
-# Event & Registration
-# -----------------------
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     start_datetime = models.DateTimeField(default=timezone.now)
@@ -105,9 +102,7 @@ class EventRegistration(models.Model):
         return f"{self.user.username} registered for {self.event.title}"
 
 
-# -----------------------
-# Announcements
-# -----------------------
+
 class Announcement(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
@@ -133,9 +128,6 @@ class AnnouncementRead(models.Model):
         unique_together = ("user", "announcement")
         
 
-# -----------------------
-# Audit Logs
-# -----------------------
 class AuditLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     action = models.CharField(max_length=255)
@@ -164,12 +156,9 @@ class ActionLog(models.Model):
     def __str__(self):
         return f"{self.timestamp}: {self.user} — {self.action}"
 
-# -----------------------
-# Profile 
-# -----------------------
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(blank=True, null=True)  # optional field
+    bio = models.TextField(blank=True, null=True) 
 
     def __str__(self):
         return f"{self.user.username}'s profile"
@@ -179,17 +168,23 @@ class Profile(models.Model):
 def create_member_for_new_user(sender, instance, created, **kwargs):
     """Ensure each User has a Member row."""
     if created:
-        Member.objects.create(user=instance)  # default role = 'member'
+        Member.objects.create(user=instance)  
 
 @receiver(post_save, sender=User)
 def save_member_profile(sender, instance, **kwargs):
-    """Save Member when User is saved (optional but handy)."""
+    """
+    Keep Member data in sync when User is updated (for profile updates).
+    But prevent duplicate student_id issues.
+    """
+  
     if hasattr(instance, 'member'):
-        instance.member.save()
+        member = instance.member
+        
+        if not Member.objects.filter(pk=member.pk).exists():
+            return  
+        member.save(update_fields=["user"])  
 
-# -----------------------
-# ATTENDANCE
-# -----------------------
+
 
 class Attendance(models.Model):
     STATUS_CHOICES = [

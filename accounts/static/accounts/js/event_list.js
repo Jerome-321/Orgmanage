@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const form = e.target;
       const formData = new FormData(form);
 
-      // clear old errors
+      
       form.querySelectorAll(".error-message").forEach(div => div.textContent = "");
 
       const response = await fetch(form.action, {
@@ -52,13 +52,13 @@ const openBtn = document.getElementById('openScannerBtn');
     const resultDisplay = document.getElementById('result');
     let html5QrCode;
 
-    // Open modal
+    
     openBtn.addEventListener('click', () => {
       modal.classList.remove('hidden');
       startScanner();
     });
 
-    // Close modal
+    
     closeBtn.addEventListener('click', () => {
       modal.classList.add('hidden');
       stopScanner();

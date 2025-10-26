@@ -2,23 +2,18 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from .models import Event  # import your Event model
+from .models import Event  
 from django.contrib.auth.forms import AuthenticationForm
 from .models import Member, Announcement
 from .models import Achievement
 
-# --------------------
-# Custom Validators
-# --------------------
+
 def no_numbers_in_username(value):
     """Disallow digits in username."""
     if any(char.isdigit() for char in value):
         raise ValidationError("Username cannot contain numbers.")
 
 
-# --------------------
-# Registration Form
-# --------------------
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(
@@ -60,9 +55,7 @@ class CustomLoginForm(AuthenticationForm):
         })
     )
 
-# --------------------
-# Profile Update Form
-# --------------------
+
 class ProfileUpdateForm(forms.ModelForm):
     email = forms.EmailField(
         required=True,

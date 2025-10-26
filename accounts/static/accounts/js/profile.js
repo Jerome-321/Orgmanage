@@ -1,4 +1,4 @@
- // Edit Profile toggle
+
   const editBtn = document.getElementById("editBtn");
   const profileForm = document.getElementById("profileForm");
   const editActions = document.getElementById("editActions");

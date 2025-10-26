@@ -14,16 +14,16 @@ def role_required(allowed_roles=[]):
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
             if not request.user.is_authenticated:
-                # redirect to login if not logged in
+                
                 return redirect('accounts:login')
 
-            # check if user has a related Member object with role
+            
             if hasattr(request.user, 'member'):
                 user_role = request.user.member.role
                 if user_role in allowed_roles:
                     return view_func(request, *args, **kwargs)
 
-            # if not allowed, raise 403 error
+            
             raise PermissionDenied
 
         return wrapper
