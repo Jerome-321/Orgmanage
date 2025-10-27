@@ -398,9 +398,13 @@ def change_membership_status(request, member_id, new_status):
 
 @login_required
 def event_list(request):
-    events = Event.objects.annotate(registered_count=Count('registrations'))
+    filter_type = request.GET.get('filter', 'all')
     now = timezone.now()
-
+    events = Event.objects.annotate(registered_count=Count('registrations'))
+    if filter_type == 'upcoming':
+        events = events.filter(start_datetime__gte=now)
+    elif filter_type == 'completed':
+        events = events.filter(end_datetime__lt=now)
     for e in events:
         e.registered = e.is_registered_by(request.user)
         e.form = EventForm(instance=e)
@@ -408,6 +412,7 @@ def event_list(request):
     return render(request, 'accounts/event_list.html', {
         "events": events,
         "now": now,
+        "active_filter": filter_type,
     })
 
 @login_required
