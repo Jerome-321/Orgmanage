@@ -111,7 +111,7 @@ class MemberEditForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        # Expect instance to be Member
+        
         instance = kwargs.get("instance", None)
         super().__init__(*args, **kwargs)
         if instance and instance.user:
@@ -121,7 +121,6 @@ class MemberEditForm(forms.ModelForm):
 
     def save(self, commit=True):
         member = super().save(commit=False)
-        # update user fields
         email = self.cleaned_data.get("email")
         first = self.cleaned_data.get("first_name")
         last = self.cleaned_data.get("last_name")

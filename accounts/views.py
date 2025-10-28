@@ -532,8 +532,6 @@ def register_event(request, event_id):
     
     if Attendance.objects.filter(user=request.user, event=event).exists():
         return JsonResponse({"status": "already_registered", "message": "Already registered."})
-
-    # Generate a unique QR token
     qr_token = str(uuid.uuid4())
 
     
@@ -594,10 +592,6 @@ def cancel_event(request, event_id):
         messages.warning(request, "You are not registered for this event.")
 
     return redirect("accounts:event_list")
-
-
-
-# --- ANNOUNCEMENTS ---
 
 @login_required
 def announcement_list(request):
@@ -869,23 +863,45 @@ def admin_scan_attendance(request, event_id, token):
 
 @login_required
 def attendance_report_view(request, event_id):
-    """Show attendance report dashboard for a specific event."""
-    if not (request.user.is_superuser or getattr(request.user.member, "role", "").lower() in ["admin", "superadmin"]):
-        return HttpResponseForbidden("Only admins and superadmins can view reports.")
+    from .models import Event, Attendance, EventRegistration, AuditLog
 
-    event = get_object_or_404(Event, pk=event_id)
-    attendances = Attendance.objects.filter(event=event).select_related("user")
+    event = get_object_or_404(Event, id=event_id)
 
-    total_registered = attendances.count()
-    total_present = attendances.filter(status="Present").count()
-    attendance_percentage = (total_present / total_registered * 100) if total_registered > 0 else 0
+    
+    if not (request.user.is_superuser or (hasattr(request.user, "member") and request.user.member.role in ["admin", "superadmin"])):
+        messages.error(request, "You are not authorized to view attendance reports.")
+        return redirect("accounts:event_list")
+
+    registered_users = EventRegistration.objects.filter(event=event).select_related("user")
+    attendance_records = Attendance.objects.filter(event=event).select_related("user")
+
+    present_count = attendance_records.filter(status="Present").count()
+    absent_count = attendance_records.filter(status="Absent").count()
+
+    attendance_map = {att.user.username: att for att in attendance_records}
+
+    final_records = []
+    for reg in registered_users:
+        att = attendance_map.get(reg.user.username)
+        final_records.append({
+            "user": reg.user,
+            "status": att.status if att else "Absent",
+            "updated_at": getattr(att, "updated_at", None),
+        })
+
+    
+    AuditLog.objects.create(
+        user=request.user,
+        action="view_report",
+        target=f"Viewed attendance report for '{event.title}'"
+    )
 
     return render(request, "accounts/attendance_report.html", {
         "event": event,
-        "attendances": attendances,
-        "total_registered": total_registered,
-        "total_present": total_present,
-        "attendance_percentage": round(attendance_percentage, 2),
+        "attendances": final_records,
+        "total_registered": registered_users.count(),
+        "total_present": present_count,
+        "total_absent": absent_count,
     })
 
 @csrf_exempt

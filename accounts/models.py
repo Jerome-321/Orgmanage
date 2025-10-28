@@ -76,15 +76,15 @@ class Event(models.Model):
     description = models.TextField(blank=True, null=True)
 
     def slots_remaining(self):
-        """Returns how many slots are still available."""
+        
         return self.max_slots - self.registrations.count()
 
     def total_registered(self):
-        """Returns total number of users registered."""
+        
         return self.registrations.count()
 
     def is_registered_by(self, user):
-        """Checks if the given user is already registered."""
+        
         return self.registrations.filter(user=user).exists()
 
     def __str__(self):
@@ -166,17 +166,12 @@ class Profile(models.Model):
 
 @receiver(post_save, sender=User)
 def create_member_for_new_user(sender, instance, created, **kwargs):
-    """Ensure each User has a Member row."""
+
     if created:
         Member.objects.create(user=instance)  
 
 @receiver(post_save, sender=User)
 def save_member_profile(sender, instance, **kwargs):
-    """
-    Keep Member data in sync when User is updated (for profile updates).
-    But prevent duplicate student_id issues.
-    """
-  
     if hasattr(instance, 'member'):
         member = instance.member
         
@@ -187,6 +182,13 @@ def save_member_profile(sender, instance, **kwargs):
 
 
 class Attendance(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, default="Absent")
+    qr_code = models.CharField(max_length=255, unique=True)
+    timestamp = models.DateTimeField(auto_now_add=True) 
+    updated_at = models.DateTimeField(auto_now=True)
+    
     STATUS_CHOICES = [
         ("Present", "Present"),
         ("Late", "Late"),
