@@ -7,6 +7,11 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
+
+import random
+import string
+
+
 ROLE_CHOICES = (
     ('superadmin', 'superadmin'),
     ('admin', 'admin'),
@@ -18,7 +23,6 @@ MEMBERSHIP_STATUS = (
     ('inactive', 'Inactive'),
     ('alumni', 'Alumni'),
 )
-
 
 class Member(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -45,8 +49,7 @@ class Member(models.Model):
     joined_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     achievements = models.TextField(blank=True, null=True)
 
-    def save(self, *args, **kwargs):
-        
+    def save(self, *args, **kwargs):  
         if not self.student_id:
             last_member = Member.objects.order_by('-id').first()
             next_num = 1 if not last_member else last_member.id + 1
@@ -55,7 +58,20 @@ class Member(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ({self.student_id})"
+        if not self.student_id:
+            # Generate a unique random student ID
+            while True:
+                random_part = ''.join(random.choices(string.digits, k=4))
+                student_id = f"STU{random_part}"
+                if not Member.objects.filter(student_id=student_id).exists():
+                    self.student_id = student_id
+                    break
 
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.user.username} ({self.student_id})"
+    
 class MembershipHistory(models.Model):
     member = models.ForeignKey(Member, on_delete=models.CASCADE, related_name="history")
     prev_status = models.CharField(max_length=20, choices=MEMBERSHIP_STATUS)
